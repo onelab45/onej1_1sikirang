@@ -9,21 +9,16 @@ import datetime
 def home(request):
     """
     홈 화면 뷰:
-    1) 모든 화분 목록을 조회합니다.
-    2) 물주기가 임박한 화물(D-Day가 가장 낮거나 음수인 화분) 상위 2개를 알람 창에 노출합니다.
+    등록된 모든 화분 목록을 조회하여 D-Day가 적게 남은(임박한) 순서로 정렬해 전달합니다.
     """
     # 데이터베이스의 모든 화분 조회
     all_plants = list(Plant.objects.all())
     
-    # D-Day(물주기까지 남은 일수) 오름차순으로 정렬 (가장 급한 화분이 앞으로)
+    # D-Day(물주기까지 남은 일수) 오름차순으로 정렬 (가장 급한 화분이 앞으로 오도록 Python 단에서 정렬)
     sorted_plants = sorted(all_plants, key=lambda p: p.days_until_watering)
     
-    # 임박한 물주기 알람 2개 추출
-    urgent_plants = sorted_plants[:2]
-    
     context = {
-        'plants': all_plants,
-        'urgent_plants': urgent_plants,
+        'plants': sorted_plants,
     }
     return render(request, 'plants/home.html', context)
 
