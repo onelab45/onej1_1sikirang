@@ -241,12 +241,23 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="phone-container">
+    <div class="phone-container" style="{% if not request.session.user_id %}padding-bottom: 20px;{% endif %}">
         <!-- 앱 최상단 헤더 -->
         <header>
             {% block header %}
             <h1><a href="{% url 'plants:home' %}">🌱 식이랑</a></h1>
-            <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Watering Assistant</span>
+            {% if request.session.user_nickname %}
+                <div class="user-header-info" style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 13px; font-weight: 700; color: var(--text-dark);">
+                        {{ request.session.user_nickname }}님
+                    </span>
+                    <a href="{% url 'plants:logout' %}" title="로그아웃" style="text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background-color: var(--primary-light); color: var(--primary-color); border: 1px solid rgba(62, 107, 72, 0.15);">
+                        🔓
+                    </a>
+                </div>
+            {% else %}
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Watering Assistant</span>
+            {% endif %}
             {% endblock %}
         </header>
 
@@ -255,6 +266,7 @@
             {% block content %}{% endblock %}
         </main>
 
+        {% if request.session.user_id %}
         <!-- 하단 탭 바 형태의 네비게이션 -->
         <nav class="bottom-nav">
             <a href="{% url 'plants:home' %}" class="nav-item {% block nav_home %}{% endblock %}">
@@ -270,6 +282,7 @@
                 <span>달력</span>
             </a>
         </nav>
+        {% endif %}
     </div>
     {% block extra_js %}{% endblock %}
 </body>

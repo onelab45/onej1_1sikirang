@@ -124,3 +124,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# 세션 설정: 쿠키 유지 7일
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_COOKIE_HTTPONLY = True
+

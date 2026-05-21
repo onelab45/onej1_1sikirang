@@ -1,0 +1,268 @@
+{% extends 'plants/base.html' %}
+
+{% block title %}식이랑 - 로그인 및 회원가입{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 로그인 컨테이너 */
+    .auth-container {
+        max-width: 400px;
+        margin: 40px auto;
+        padding: 30px 24px;
+        background-color: var(--card-bg);
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(117, 95, 75, 0.08);
+        border: 1px solid var(--border-color);
+    }
+
+    /* 로고 영역 */
+    .auth-logo-section {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .auth-logo-section h1 {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--primary-color);
+        margin: 0;
+        letter-spacing: -0.5px;
+    }
+
+    .auth-logo-section p {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 6px;
+    }
+
+    /* 탭 헤더 */
+    .auth-tabs {
+        display: flex;
+        border-bottom: 2px solid rgba(226, 221, 213, 0.6);
+        margin-bottom: 24px;
+    }
+
+    .auth-tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+    }
+
+    .auth-tab:hover {
+        color: var(--primary-color);
+    }
+
+    .auth-tab.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+
+    /* 폼 스타일링 */
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 6px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: var(--bg-color);
+        color: var(--text-dark);
+        transition: border-color 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    /* 에러 스타일링 */
+    .error-list {
+        background-color: #FDF0F0;
+        border: 1px solid rgba(211, 92, 92, 0.2);
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        list-style: none;
+    }
+
+    .error-item {
+        font-size: 12px;
+        color: var(--danger-color);
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .error-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .field-error-text {
+        font-size: 11px;
+        color: var(--danger-color);
+        margin-top: 4px;
+        display: block;
+    }
+
+    /* 버튼 */
+    .btn-submit {
+        margin-top: 24px;
+        width: 100%;
+        padding: 14px;
+        font-size: 15px;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <!-- 로고 -->
+    <div class="auth-logo-section">
+        <h1>식이랑</h1>
+        <p>화분 무게 측정 기반 스마트 물주기 도우미</p>
+    </div>
+
+    <!-- 탭 링크 -->
+    <div class="auth-tabs">
+        <div id="tab-login" class="auth-tab" onclick="setTab('login')">이미 등록했어요</div>
+        <div id="tab-signup" class="auth-tab" onclick="setTab('signup')">처음 사용해요</div>
+    </div>
+
+    <!-- 1) 로그인 폼 영역 -->
+    <div id="form-login" class="auth-form-container" style="display: none;">
+        <form method="post" action="{% url 'plants:login' %}" novalidate>
+            {% csrf_token %}
+
+            <!-- 비필드(넌필드) 에러 출력 -->
+            {% if login_form.non_field_errors %}
+                <ul class="error-list">
+                    {% for error in login_form.non_field_errors %}
+                        <li class="error-item">⚠️ {{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <!-- 닉네임 입력 -->
+            <div class="form-group">
+                <label for="{{ login_form.nickname.id_for_label }}">{{ login_form.nickname.label }}</label>
+                {{ login_form.nickname }}
+                {% if login_form.nickname.errors %}
+                    {% for error in login_form.nickname.errors %}
+                        <span class="field-error-text">⚠️ {{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- PIN 입력 -->
+            <div class="form-group">
+                <label for="{{ login_form.pin.id_for_label }}">{{ login_form.pin.label }}</label>
+                {{ login_form.pin }}
+                {% if login_form.pin.errors %}
+                    {% for error in login_form.pin.errors %}
+                        <span class="field-error-text">⚠️ {{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-submit">내 화분 보러 가기</button>
+        </form>
+    </div>
+
+    <!-- 2) 회원가입 폼 영역 -->
+    <div id="form-signup" class="auth-form-container" style="display: none;">
+        <form method="post" action="{% url 'plants:signup' %}" novalidate>
+            {% csrf_token %}
+
+            <!-- 비필드(넌필드) 에러 출력 -->
+            {% if signup_form.non_field_errors %}
+                <ul class="error-list">
+                    {% for error in signup_form.non_field_errors %}
+                        <li class="error-item">⚠️ {{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <!-- 닉네임 입력 -->
+            <div class="form-group">
+                <label for="{{ signup_form.nickname.id_for_label }}">{{ signup_form.nickname.label }}</label>
+                {{ signup_form.nickname }}
+                {% if signup_form.nickname.errors %}
+                    {% for error in signup_form.nickname.errors %}
+                        <span class="field-error-text">⚠️ {{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- PIN 입력 -->
+            <div class="form-group">
+                <label for="{{ signup_form.pin.id_for_label }}">{{ signup_form.pin.label }}</label>
+                {{ signup_form.pin }}
+                {% if signup_form.pin.errors %}
+                    {% for error in signup_form.pin.errors %}
+                        <span class="field-error-text">⚠️ {{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- PIN 확인 입력 -->
+            <div class="form-group">
+                <label for="{{ signup_form.pin_confirm.id_for_label }}">{{ signup_form.pin_confirm.label }}</label>
+                {{ signup_form.pin_confirm }}
+                {% if signup_form.pin_confirm.errors %}
+                    {% for error in signup_form.pin_confirm.errors %}
+                        <span class="field-error-text">⚠️ {{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-submit">새로 등록하고 시작하기</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    /**
+     * 탭을 전환하는 클라이언트 함수
+     */
+    function setTab(tabName) {
+        // 기존 탭 및 활성 폼 초기화
+        document.querySelectorAll('.auth-tab').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.auth-form-container').forEach(el => el.style.display = 'none');
+        
+        if (tabName === 'login') {
+            document.getElementById('tab-login').classList.add('active');
+            document.getElementById('form-login').style.display = 'block';
+        } else {
+            document.getElementById('tab-signup').classList.add('active');
+            document.getElementById('form-signup').style.display = 'block';
+        }
+    }
+    
+    // 초기 로딩 시 렌더링된 탭 포커스 자동 지정 (에러가 있는 탭으로 복귀 목적)
+    window.addEventListener('DOMContentLoaded', () => {
+        const activeTab = "{{ active_tab|default:'login' }}";
+        setTab(activeTab);
+    });
+</script>
+{% endblock %}
