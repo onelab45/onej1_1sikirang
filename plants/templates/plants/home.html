@@ -1,0 +1,263 @@
+{% extends 'plants/base.html' %}
+
+{% block title %}식이랑 - 홈{% endblock %}
+
+{% block nav_home %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 알람 섹션 디자인 */
+    .alert-section-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--accent-clay);
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .alarm-card {
+        background-color: var(--accent-clay-light);
+        border: 1px solid rgba(200, 122, 83, 0.2);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .alarm-icon {
+        font-size: 24px;
+        animation: pulse 1.5s infinite alternate;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.15); }
+    }
+    
+    .alarm-content {
+        flex: 1;
+    }
+    
+    .alarm-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+    
+    .alarm-desc {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+    
+    .alarm-action {
+        color: var(--accent-clay);
+        font-weight: 700;
+        font-size: 12px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+    }
+
+    /* 화분 목록 그리드/목록 */
+    .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 24px 0 12px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .plant-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .plant-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .plant-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .plant-name-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .plant-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+    
+    .plant-weight-info {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+    
+    .plant-weight-number {
+        font-family: var(--font-english);
+        font-weight: 500;
+        color: var(--text-dark);
+    }
+    
+    /* D-Day 뱃지 스타일 */
+    .dday-badge {
+        font-family: var(--font-english);
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        text-align: center;
+        min-width: 75px;
+    }
+    
+    .dday-overdue {
+        background-color: #FDF0F0;
+        color: var(--danger-color);
+        border: 1px solid rgba(211, 92, 92, 0.2);
+    }
+    
+    .dday-today {
+        background-color: #FFF9E6;
+        color: #D47926;
+        border: 1px solid rgba(212, 121, 38, 0.2);
+        animation: blink 1s infinite alternate;
+    }
+    
+    .dday-safe {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        border: 1px solid rgba(62, 107, 72, 0.1);
+    }
+    
+    @keyframes blink {
+        0% { opacity: 0.8; }
+        100% { opacity: 1; }
+    }
+    
+    /* 빈 상태 안내 */
+    .empty-state {
+        padding: 40px 20px;
+        text-align: center;
+        background-color: var(--card-bg);
+        border-radius: 16px;
+        border: 1px dashed var(--border-color);
+    }
+    
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+        display: block;
+    }
+    
+    .empty-text {
+        font-size: 14px;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- 1) 임박한 물주기 알람 영역 -->
+    {% if plants %}
+        <div class="alert-section-title">
+            <span>🚨 물주기 임박 알림</span>
+        </div>
+        
+        {% for plant in urgent_plants %}
+            <div class="alarm-card">
+                {% if plant.days_until_watering < 0 %}
+                    <span class="alarm-icon">⚠️</span>
+                    <div class="alarm-content">
+                        <div class="alarm-title">{{ plant.name }}</div>
+                        <div class="alarm-desc">물주기 예정일이 <strong style="color: var(--danger-color);">{{ plant.days_until_watering|stringformat:"d"|slice:"1:" }}일</strong> 지났습니다!</div>
+                    </div>
+                {% elif plant.days_until_watering == 0 %}
+                    <span class="alarm-icon">💧</span>
+                    <div class="alarm-content">
+                        <div class="alarm-title">{{ plant.name }}</div>
+                        <div class="alarm-desc"><strong>오늘</strong> 꼭 물을 주셔야 합니다!</div>
+                    </div>
+                {% else %}
+                    <span class="alarm-icon">⏳</span>
+                    <div class="alarm-content">
+                        <div class="alarm-title">{{ plant.name }}</div>
+                        <div class="alarm-desc">물주기까지 <strong>D-{{ plant.days_until_watering }}일</strong> 남았습니다.</div>
+                    </div>
+                {% endif %}
+                <a href="{% url 'plants:plant_detail' plant.pk %}" class="alarm-action">
+                    보기 ➔
+                </a>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- 2) 등록된 화분 목록 영역 -->
+    <div class="section-title">
+        <span>🪴 나의 화분 목록</span>
+        <span style="font-size: 12px; font-weight: normal; color: var(--text-muted);">총 {{ plants|length }}개</span>
+    </div>
+
+    {% if plants %}
+        <div class="plant-list">
+            {% for plant in plants %}
+                <a href="{% url 'plants:plant_detail' plant.pk %}" class="card plant-card">
+                    <div class="plant-info">
+                        <div class="plant-name-row">
+                            <span class="plant-name">{{ plant.name }}</span>
+                            <!-- 계절 배지 표시 -->
+                            <span class="badge badge-{{ plant.season }}">
+                                {{ plant.get_season_display }}
+                            </span>
+                        </div>
+                        <div class="plant-weight-info">
+                            오늘 예상 무게: <span class="plant-weight-number">{{ plant.estimated_weight_today }}g</span>
+                        </div>
+                    </div>
+                    
+                    <!-- D-Day 배지 분기 처리 -->
+                    {% if plant.days_until_watering < 0 %}
+                        <div class="dday-badge dday-overdue">
+                            D+{{ plant.days_until_watering|stringformat:"d"|slice:"1:" }}
+                        </div>
+                    {% elif plant.days_until_watering == 0 %}
+                        <div class="dday-badge dday-today">
+                            D-Day
+                        </div>
+                    {% else %}
+                        <div class="dday-badge dday-safe">
+                            D-{{ plant.days_until_watering }}
+                        </div>
+                    {% endif %}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <span class="empty-icon">🌵</span>
+            <div class="empty-text">아직 등록된 화분이 없어요.</div>
+            <a href="{% url 'plants:plant_create' %}" class="btn btn-primary" style="width: auto; display: inline-flex;">
+                첫 화분 등록하러 가기
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}

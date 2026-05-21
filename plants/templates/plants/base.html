@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}식이랑 - 화분 물주기 비서{% endblock %}</title>
+    <!-- Google Fonts: 프리미엄 고딕 폰트 적용 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* 디자인 시스템 및 자연 톤 변수 선언 */
+        :root {
+            --bg-color: #F8F5F0;       /* 따뜻한 흙빛/아이보리 배경색 */
+            --card-bg: #FFFFFF;        /* 카드 및 모달 흰색 배경 */
+            --primary-color: #3E6B48;  /* 메인 나뭇잎 초록색 */
+            --primary-light: #EBF2EC;  /* 연한 초록 배경색 */
+            --accent-clay: #C87A53;    /* 포인트 황토색/나무색 */
+            --accent-clay-light: #F7EFEA;
+            --text-dark: #2F3E32;      /* 깊은 숲색 본문 글씨 */
+            --text-muted: #8E9B90;     /* 보조 흐린 글씨 */
+            --danger-color: #D35C5C;   /* 경고/삭제 빨간색 */
+            --border-color: #E2DDD5;   /* 부드러운 경계선 색상 */
+            --font-main: 'Noto Sans KR', sans-serif;
+            --font-english: 'Outfit', sans-serif;
+        }
+
+        /* 기본 레이아웃 초기화 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: #EAE5DE; /* 모니터 화면용 백그라운드 어두운 황토빛 */
+            color: var(--text-dark);
+            line-height: 1.5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        /* 모바일 우선(Mobile-First)을 위한 컨테이너 크기 제한 (최대 480px) */
+        .phone-container {
+            width: 100%;
+            max-width: 480px;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.08);
+            padding-bottom: 80px; /* 하단 네비게이션 공간 확보 */
+        }
+
+        /* 헤더 영역 */
+        header {
+            background-color: var(--card-bg);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        header h1 a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* 메인 콘텐츠 컨테이너 */
+        main {
+            padding: 20px;
+            flex: 1;
+        }
+
+        /* 하단 고정 네비게이션 바 */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+            position: fixed; /* 항상 고정 */
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+            width: 33.3%;
+            height: 100%;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 3px;
+        }
+
+        /* 공통 프리미엄 스타일 카드 */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(226, 221, 213, 0.5);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:active {
+            transform: scale(0.99);
+        }
+
+        /* 버튼 컴포넌트 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            width: 100%;
+            text-decoration: none;
+            gap: 8px;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2E5336;
+        }
+
+        .btn-secondary {
+            background-color: var(--accent-clay);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #A9613D;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-dark);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        /* 배지 컴포넌트 */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .badge-spring { background-color: #FFE6E6; color: #D35C5C; }
+        .badge-summer { background-color: #E6F2FF; color: #3A83F1; }
+        .badge-fall { background-color: #FFF2E6; color: #D47926; }
+        .badge-winter { background-color: #E6FFF9; color: #1FB58F; }
+
+        /* 뒤로가기 버튼 헤더 보완 */
+        .back-link {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--primary-light);
+        }
+
+        /* 캘린더 스타일 */
+        .calendar-container {
+            width: 100%;
+        }
+
+        /* 유틸리티 */
+        .text-center { text-align: center; }
+        .mt-20 { margin-top: 20px; }
+        .mb-10 { margin-bottom: 10px; }
+        .mb-20 { margin-bottom: 20px; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="phone-container">
+        <!-- 앱 최상단 헤더 -->
+        <header>
+            {% block header %}
+            <h1><a href="{% url 'plants:home' %}">🌱 식이랑</a></h1>
+            <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Watering Assistant</span>
+            {% endblock %}
+        </header>
+
+        <!-- 본문 콘텐츠 영역 -->
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- 하단 탭 바 형태의 네비게이션 -->
+        <nav class="bottom-nav">
+            <a href="{% url 'plants:home' %}" class="nav-item {% block nav_home %}{% endblock %}">
+                <span class="nav-icon">🏡</span>
+                <span>홈</span>
+            </a>
+            <a href="{% url 'plants:plant_create' %}" class="nav-item {% block nav_add %}{% endblock %}">
+                <span class="nav-icon">➕</span>
+                <span>등록</span>
+            </a>
+            <a href="{% url 'plants:calendar' %}" class="nav-item {% block nav_cal %}{% endblock %}">
+                <span class="nav-icon">📅</span>
+                <span>달력</span>
+            </a>
+        </nav>
+    </div>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

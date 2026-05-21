@@ -1,0 +1,411 @@
+{% extends 'plants/base.html' %}
+
+{% block title %}식이랑 - {{ plant.name }} 상세{% endblock %}
+
+{% block header %}
+    <a href="{% url 'plants:home' %}" class="back-link">➔</a>
+    <h1 style="font-size: 18px; margin-right: auto; margin-left: 12px;">{{ plant.name }} 상세 정보</h1>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* D-Day 핵심 헤더 카드 */
+    .detail-header-card {
+        background-color: var(--primary-light);
+        border: 1px solid rgba(62, 107, 72, 0.15);
+        text-align: center;
+        padding: 30px 20px;
+        position: relative;
+    }
+    
+    .detail-dday {
+        font-family: var(--font-english);
+        font-size: 40px;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin: 8px 0;
+    }
+    
+    .detail-dday.overdue {
+        color: var(--danger-color);
+    }
+    
+    .detail-dday.today {
+        color: var(--accent-clay);
+    }
+
+    /* 그리드 스펙 테이블 */
+    .specs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 20px 0;
+    }
+    
+    .spec-item {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .spec-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+    
+    .spec-value {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+    
+    .spec-value span {
+        font-family: var(--font-english);
+        font-weight: 500;
+    }
+
+    /* 탭/메뉴 스타일 */
+    .menu-section {
+        margin-top: 24px;
+    }
+    
+    .section-subtitle {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: var(--text-dark);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    /* 물주기 로그 목록 */
+    .log-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .log-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 12px 16px;
+        border-radius: 12px;
+    }
+    
+    .log-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .log-date {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-dark);
+    }
+    
+    .log-memo {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+    
+    .log-weight {
+        font-family: var(--font-english);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+
+    /* 아코디언 설정 카드 */
+    .accordion-header {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 14px 16px;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 500;
+        font-size: 14px;
+    }
+    
+    .accordion-content {
+        display: none;
+        margin-top: 8px;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px 16px;
+    }
+    
+    .accordion-content.active {
+        display: block;
+    }
+
+    /* 모달 팝업 스타일 */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(47, 62, 50, 0.6); /* 숲색 톤 딤드 */
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        padding: 20px;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+    }
+    
+    .modal-card {
+        background-color: var(--card-bg);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 400px;
+        padding: 24px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        animation: scaleUp 0.25s ease-out;
+    }
+    
+    @keyframes scaleUp {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    
+    .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    /* 폼 스타일 중복 보완 */
+    .form-group {
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .form-group label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+    .form-input, .form-select {
+        width: 100%;
+        padding: 12px 14px;
+        font-size: 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        outline: none;
+        font-family: var(--font-main);
+    }
+    .form-input:focus, .form-select:focus {
+        border-color: var(--primary-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- 1) D-Day 상단 카드 -->
+    <div class="card detail-header-card">
+        <span class="badge badge-{{ plant.season }}" style="margin-bottom: 6px;">
+            {{ plant.get_season_display }}
+        </span>
+        <h2 style="font-size: 22px; font-weight: 700;">{{ plant.name }}</h2>
+        
+        {% if plant.days_until_watering < 0 %}
+            <div class="detail-dday overdue">
+                D+{{ plant.days_until_watering|stringformat:"d"|slice:"1:" }}
+            </div>
+            <div style="font-size: 13px; color: var(--danger-color); font-weight: 700;">
+                물주기 예정일이 지났습니다. 지금 물을 주세요!
+            </div>
+        {% elif plant.days_until_watering == 0 %}
+            <div class="detail-dday today">
+                D-Day
+            </div>
+            <div style="font-size: 13px; color: var(--accent-clay); font-weight: 700;">
+                오늘 꼭 물을 주는 날입니다!
+            </div>
+        {% else %}
+            <div class="detail-dday">
+                D-{{ plant.days_until_watering }}
+            </div>
+            <div style="font-size: 13px; color: var(--primary-color); font-weight: 500;">
+                다음 예정일: <strong>{{ plant.watering_date|date:"n월 j일" }}</strong>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 2) 화분 정보 그리드 스펙 -->
+    <div class="specs-grid">
+        <div class="spec-item">
+            <span class="spec-label">현재 무게</span>
+            <span class="spec-value"><span>{{ plant.current_weight }}</span>g</span>
+        </div>
+        <div class="spec-item">
+            <span class="spec-label">오늘 예상 무게</span>
+            <span class="spec-value" style="color: var(--accent-clay);"><span>{{ plant.estimated_weight_today }}</span>g</span>
+        </div>
+        <div class="spec-item">
+            <span class="spec-label">1일 감소량 (Y)</span>
+            <span class="spec-value"><span>{{ plant.daily_decrease }}</span>g/일</span>
+        </div>
+        <div class="spec-item">
+            <span class="spec-label">물주는 한계 (Z)</span>
+            <span class="spec-value"><span>{{ plant.water_threshold }}</span>g</span>
+        </div>
+    </div>
+    
+    <div style="font-size: 11px; color: var(--text-muted); text-align: right; margin-top: -12px; margin-bottom: 20px;">
+        마지막 측정: {{ plant.last_measured_at|date:"Y-m-d H:i" }}
+    </div>
+
+    <!-- 3) 핵심 행동 버튼: "물 줬어요" -->
+    <button class="btn btn-primary" onclick="openWaterModal()" style="font-size: 16px; padding: 14px 20px;">
+        💧 물 줬어요 (기록하기)
+    </button>
+
+    <!-- 4) 물주기 이력 목록 -->
+    <div class="menu-section">
+        <div class="section-subtitle">
+            <span>Water Logs (물주기 이력)</span>
+            <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">최근순</span>
+        </div>
+        <div class="log-list">
+            {% for log in water_logs %}
+                <div class="log-item">
+                    <div class="log-info">
+                        <span class="log-date">{{ log.watered_at|date:"Y-m-d H:i" }}</span>
+                        {% if log.memo %}
+                            <span class="log-memo">💬 {{ log.memo }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="log-weight">
+                        {{ log.weight_after }}g
+                    </div>
+                </div>
+            {% empty %}
+                <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px; background-color: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color);">
+                    아직 기록된 물주기 이력이 없습니다.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 5) 아코디언 설정 관리 메뉴 -->
+    <div class="menu-section mb-20">
+        <div class="accordion-header" onclick="toggleAccordion()">
+            <span>⚙️ 화분 상세 설정 변경 (관리메뉴)</span>
+            <span id="accordionArrow" style="transition: transform 0.2s;">▼</span>
+        </div>
+        <div class="accordion-content" id="accordionContent">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                                <div style="color: var(--danger-color); font-size: 11px;">⚠️ {{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-secondary mt-10">
+                    💾 설정 수정 완료
+                </button>
+            </form>
+            
+            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 20px 0;">
+            
+            <!-- 삭제 폼 -->
+            <form method="post" action="{% url 'plants:plant_delete' plant.pk %}" onsubmit="return confirm('이 화분을 정말 삭제하시겠습니까? 관련 모든 물주기 이력도 함께 삭제됩니다.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    🗑️ 화분 삭제하기
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 물주기 등록 모달 팝업 구조 -->
+    <div class="modal-overlay" id="waterModal" onclick="closeWaterModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-title">
+                <span>💧 물주기 기록 입력</span>
+            </div>
+            <form method="post" action="{% url 'plants:plant_water' plant.pk %}">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="id_weight_after">물 준 후 무게 (g)</label>
+                    <input type="number" name="weight_after" step="0.1" class="form-input" id="id_weight_after" required placeholder="예: 850.5">
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                        물을 흠뻑 준 후, 화분 받침대 물을 빼고 측정한 무게를 적어주세요.
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_memo">메모 (선택)</label>
+                    <input type="text" name="memo" class="form-input" id="id_memo" placeholder="예: 영양제 추가함, 흠뻑 줌">
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn btn-outline" onclick="closeWaterModal()">취소</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">기록 저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 아코디언 토글 제어
+    function toggleAccordion() {
+        const content = document.getElementById('accordionContent');
+        const arrow = document.getElementById('accordionArrow');
+        const isActive = content.classList.contains('active');
+        
+        if (isActive) {
+            content.classList.remove('active');
+            arrow.style.transform = 'rotate(0deg)';
+        } else {
+            content.classList.add('active');
+            arrow.style.transform = 'rotate(180deg)';
+        }
+    }
+    
+    // 모달 제어
+    function openWaterModal() {
+        // 모달 열 때 현재 화분의 '물 준 후 무게' 기본값을 Z(물주는 무게)보다 약간 높은 값이나 현재 무게 정도로 미리 추천해둡니다.
+        const currentWeight = "{{ plant.current_weight }}";
+        document.getElementById('id_weight_after').value = currentWeight;
+        document.getElementById('waterModal').classList.add('active');
+    }
+    
+    function closeWaterModal(event) {
+        document.getElementById('waterModal').classList.remove('active');
+    }
+</script>
+{% endblock %}
