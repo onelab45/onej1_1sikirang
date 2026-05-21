@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Plant, WaterLog
+from .models import Plant, PlantLog
 
 # Register your models here.
 
@@ -9,21 +9,21 @@ class PlantAdmin(admin.ModelAdmin):
     Plant(화분) 모델을 관리하기 위한 Django Admin 설정 클래스입니다.
     목록 화면에서 화분 이름, 현재 무게, 물주는 예정일, 남은 일수 등을 한눈에 볼 수 있도록 구성합니다.
     """
-    # 목록 페이지에 표시할 필드들
+    # 2단계 보완: season 삭제, tip 추가
     list_display = (
         'name', 
         'current_weight', 
         'get_watering_date', 
         'get_days_until_watering', 
-        'season', 
+        'tip', 
         'last_measured_at'
     )
     
-    # 우측 필터 옵션
-    list_filter = ('season', 'last_measured_at')
+    # 우측 필터 옵션 (season 삭제)
+    list_filter = ('last_measured_at',)
     
     # 검색 창 설정
-    search_fields = ('name',)
+    search_fields = ('name', 'tip')
 
     # 어드민 목록 뷰에서 모델 프로퍼티(watering_date)를 한글 필드명으로 노출하기 위한 데코레이터 메서드
     @admin.display(description="물주는 예정일")
@@ -42,22 +42,26 @@ class PlantAdmin(admin.ModelAdmin):
             return f"D-{days} (일 남음)"
 
 
-@admin.register(WaterLog)
-class WaterLogAdmin(admin.ModelAdmin):
+@admin.register(PlantLog)
+class PlantLogAdmin(admin.ModelAdmin):
     """
-    WaterLog(물주기 이력) 모델을 관리하기 위한 Django Admin 설정 클래스입니다.
-    어떤 화분에 언제 물을 주었는지, 물 준 후 무게와 메모를 기록한 목록을 표시합니다.
+    PlantLog(화분 이력 로그) 모델을 관리하기 위한 Django Admin 설정 클래스입니다.
+    등록, 물주기, 설정 변경 등 화분의 모든 이벤트를 요약 표시합니다.
     """
-    # 목록 페이지에 표시할 필드들
     list_display = (
         'plant', 
-        'watered_at', 
+        'event_type', 
+        'created_at', 
         'weight_after', 
-        'memo'
+        'get_detail_summary'
     )
     
-    # 우측 필터 옵션
-    list_filter = ('plant', 'watered_at')
-    
-    # 검색 창 설정
-    search_fields = ('plant__name', 'memo')
+    list_filter = ('plant', 'event_type', 'created_at')
+    search_fields = ('plant__name', 'detail')
+
+    # 상세 내용 요약 출력 메서드
+    @admin.display(description="상세 내용 요약")
+    def get_detail_summary(self, obj):
+        if obj.detail and len(obj.detail) > 40:
+            return obj.detail[:40] + "..."
+        return obj.detail or ""

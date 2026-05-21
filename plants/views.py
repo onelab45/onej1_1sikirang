@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-from .models import Plant, WaterLog
+from .models import Plant, PlantLog
 from .forms import PlantForm, WaterForm
 import calendar
 import datetime
@@ -70,9 +70,9 @@ def plant_detail(request, pk):
     else:
         form = PlantForm(instance=plant)
         
-    # 물주기 기록 폼 및 목록 데이터 준비
+    # 물주기 기록 폼 및 목록 데이터 준비 (WaterLog -> PlantLog)
     water_form = WaterForm()
-    water_logs = plant.water_logs.all().order_by('-watered_at')
+    water_logs = plant.logs.all().order_by('-created_at')
     
     context = {
         'plant': plant,
@@ -87,7 +87,7 @@ def plant_detail(request, pk):
 def plant_water(request, pk):
     """
     "물 줬어요" 처리 뷰 (POST 방식 전용):
-    물 준 후 무게와 메모를 기록하여 물주기 이력(WaterLog)을 새로 생성하고,
+    물 준 후 무게와 메모를 기록하여 물주기 이력(PlantLog)을 새로 생성하고,
     화분(Plant)의 현재 무게와 마지막 측정 시각을 최신 상태로 갱신합니다.
     """
     plant = get_object_or_404(Plant, pk=pk)
@@ -96,13 +96,22 @@ def plant_water(request, pk):
     if form.is_valid():
         water_log = form.save(commit=False)
         water_log.plant = plant
+        water_log.event_type = 'watered'
+        # 상세 내용에 물 준 후 무게와 메모를 기록
+        detail_txt = f"물 준 후 무게: {water_log.weight_after}g"
+        if water_log.detail:
+            detail_txt += f" / 메모: {water_log.detail}"
+        water_log.detail = detail_txt
+        
         # 물 준 시각은 현재 시각으로 자동 설정
-        water_log.watered_at = timezone.now()
+        water_log.created_at = timezone.now()
         water_log.save()
         
         # Plant 모델의 현재 무게 및 마지막 측정 시각 동시 업데이트
+        # _is_watering 속성을 부여해 save() 시 무게 단독 수정 로그 생성을 스킵합니다.
+        plant._is_watering = True
         plant.current_weight = water_log.weight_after
-        plant.last_measured_at = water_log.watered_at
+        plant.last_measured_at = water_log.created_at
         plant.save()
         
     return redirect('plants:plant_detail', pk=plant.pk)

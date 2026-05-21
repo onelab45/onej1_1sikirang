@@ -73,6 +73,8 @@
                         <div class="form-help">하루 동안 화분에서 감소하는 물의 평균 양(g)입니다.</div>
                     {% elif field.name == 'water_threshold' %}
                         <div class="form-help">화분 무게가 이 값 이하로 내려가면 물주기 알림이 뜹니다.</div>
+                    {% elif field.name == 'tip' %}
+                        <div class="form-help">이 화분의 관리 노하우나 주의사항을 자유롭게 적어주세요. (선택)</div>
                     {% endif %}
                     
                     <!-- 에러 메시지 처리 -->

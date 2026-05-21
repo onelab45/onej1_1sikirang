@@ -41,6 +41,7 @@
     
     .alarm-content {
         flex: 1;
+        min-width: 0; /* flex 자식의 말줄임표 작동 보장 */
     }
     
     .alarm-title {
@@ -62,6 +63,7 @@
         text-decoration: none;
         display: flex;
         align-items: center;
+        flex-shrink: 0;
     }
 
     /* 화분 목록 그리드/목록 */
@@ -81,24 +83,20 @@
         gap: 12px;
     }
     
+    /* 2단계 보완: 가로형 정보 카드 레이아웃 */
     .plant-card {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
         text-decoration: none;
         color: inherit;
     }
     
-    .plant-info {
+    .plant-card-header {
         display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-    
-    .plant-name-row {
-        display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 8px;
     }
     
     .plant-name {
@@ -107,15 +105,27 @@
         color: var(--text-dark);
     }
     
-    .plant-weight-info {
-        font-size: 12px;
-        color: var(--text-muted);
+    .plant-weight-line {
+        font-size: 13px;
+        color: var(--text-dark);
     }
     
     .plant-weight-number {
         font-family: var(--font-english);
-        font-weight: 500;
-        color: var(--text-dark);
+        font-weight: 700;
+    }
+    
+    .plant-tip-line {
+        font-size: 12px;
+        color: var(--accent-clay);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        border-top: 1px dashed rgba(226, 221, 213, 0.6);
+        padding-top: 6px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
     
     /* D-Day 뱃지 스타일 */
@@ -123,10 +133,11 @@
         font-family: var(--font-english);
         padding: 6px 12px;
         border-radius: 20px;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
         text-align: center;
-        min-width: 75px;
+        min-width: 70px;
+        flex-shrink: 0;
     }
     
     .dday-overdue {
@@ -190,18 +201,33 @@
                     <div class="alarm-content">
                         <div class="alarm-title">{{ plant.name }}</div>
                         <div class="alarm-desc">물주기 예정일이 <strong style="color: var(--danger-color);">{{ plant.days_until_watering|stringformat:"d"|slice:"1:" }}일</strong> 지났습니다!</div>
+                        {% if plant.tip %}
+                            <div style="font-size: 11px; color: var(--accent-clay); margin-top: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 100%;">
+                                💡 Tip: {{ plant.tip }}
+                            </div>
+                        {% endif %}
                     </div>
                 {% elif plant.days_until_watering == 0 %}
                     <span class="alarm-icon">💧</span>
                     <div class="alarm-content">
                         <div class="alarm-title">{{ plant.name }}</div>
                         <div class="alarm-desc"><strong>오늘</strong> 꼭 물을 주셔야 합니다!</div>
+                        {% if plant.tip %}
+                            <div style="font-size: 11px; color: var(--accent-clay); margin-top: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 100%;">
+                                💡 Tip: {{ plant.tip }}
+                            </div>
+                        {% endif %}
                     </div>
                 {% else %}
                     <span class="alarm-icon">⏳</span>
                     <div class="alarm-content">
                         <div class="alarm-title">{{ plant.name }}</div>
                         <div class="alarm-desc">물주기까지 <strong>D-{{ plant.days_until_watering }}일</strong> 남았습니다.</div>
+                        {% if plant.tip %}
+                            <div style="font-size: 11px; color: var(--accent-clay); margin-top: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 100%;">
+                                💡 Tip: {{ plant.tip }}
+                            </div>
+                        {% endif %}
                     </div>
                 {% endif %}
                 <a href="{% url 'plants:plant_detail' plant.pk %}" class="alarm-action">
@@ -221,31 +247,36 @@
         <div class="plant-list">
             {% for plant in plants %}
                 <a href="{% url 'plants:plant_detail' plant.pk %}" class="card plant-card">
-                    <div class="plant-info">
-                        <div class="plant-name-row">
-                            <span class="plant-name">{{ plant.name }}</span>
-                            <!-- 계절 배지 표시 -->
-                            <span class="badge badge-{{ plant.season }}">
-                                {{ plant.get_season_display }}
-                            </span>
-                        </div>
-                        <div class="plant-weight-info">
-                            오늘 예상 무게: <span class="plant-weight-number">{{ plant.estimated_weight_today }}g</span>
-                        </div>
+                    <!-- Top row: Name and D-Day -->
+                    <div class="plant-card-header">
+                        <span class="plant-name">{{ plant.name }}</span>
+                        
+                        <!-- D-Day 배지 분기 처리 -->
+                        {% if plant.days_until_watering < 0 %}
+                            <div class="dday-badge dday-overdue">
+                                D+{{ plant.days_until_watering|stringformat:"d"|slice:"1:" }}
+                            </div>
+                        {% elif plant.days_until_watering == 0 %}
+                            <div class="dday-badge dday-today">
+                                D-Day
+                            </div>
+                        {% else %}
+                            <div class="dday-badge dday-safe">
+                                D-{{ plant.days_until_watering }}
+                            </div>
+                        {% endif %}
                     </div>
                     
-                    <!-- D-Day 배지 분기 처리 -->
-                    {% if plant.days_until_watering < 0 %}
-                        <div class="dday-badge dday-overdue">
-                            D+{{ plant.days_until_watering|stringformat:"d"|slice:"1:" }}
-                        </div>
-                    {% elif plant.days_until_watering == 0 %}
-                        <div class="dday-badge dday-today">
-                            D-Day
-                        </div>
-                    {% else %}
-                        <div class="dday-badge dday-safe">
-                            D-{{ plant.days_until_watering }}
+                    <!-- Middle row: 오늘 Xg / 물주기 Zg -->
+                    <div class="plant-weight-line">
+                        오늘 <span class="plant-weight-number">{{ plant.estimated_weight_today }}g</span>  /  물주기 <span class="plant-weight-number">{{ plant.water_threshold }}g</span>
+                    </div>
+                    
+                    <!-- Bottom row: Tip 메모 (있을 때만 표시) -->
+                    {% if plant.tip %}
+                        <div class="plant-tip-line" title="{{ plant.tip }}">
+                            <span>💡 Tip:</span>
+                            <span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{{ plant.tip }}</span>
                         </div>
                     {% endif %}
                 </a>

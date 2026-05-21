@@ -88,23 +88,13 @@
     .log-list {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
     }
     
     .log-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
         background-color: var(--card-bg);
         border: 1px solid var(--border-color);
-        padding: 12px 16px;
         border-radius: 12px;
-    }
-    
-    .log-info {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
     }
     
     .log-date {
@@ -114,15 +104,8 @@
     }
     
     .log-memo {
-        font-size: 11px;
-        color: var(--text-muted);
-    }
-    
-    .log-weight {
-        font-family: var(--font-english);
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--primary-color);
+        font-size: 12px;
+        color: var(--text-dark);
     }
 
     /* 아코디언 설정 카드 */
@@ -226,9 +209,6 @@
 {% block content %}
     <!-- 1) D-Day 상단 카드 -->
     <div class="card detail-header-card">
-        <span class="badge badge-{{ plant.season }}" style="margin-bottom: 6px;">
-            {{ plant.get_season_display }}
-        </span>
         <h2 style="font-size: 22px; font-weight: 700;">{{ plant.name }}</h2>
         
         {% if plant.days_until_watering < 0 %}
@@ -284,28 +264,33 @@
         💧 물 줬어요 (기록하기)
     </button>
 
-    <!-- 4) 물주기 이력 목록 -->
+    <!-- 4) 통합 화분 이력 목록 -->
     <div class="menu-section">
         <div class="section-subtitle">
-            <span>Water Logs (물주기 이력)</span>
+            <span>📜 화분 이력</span>
             <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">최근순</span>
         </div>
         <div class="log-list">
             {% for log in water_logs %}
-                <div class="log-item">
-                    <div class="log-info">
-                        <span class="log-date">{{ log.watered_at|date:"Y-m-d H:i" }}</span>
-                        {% if log.memo %}
-                            <span class="log-memo">💬 {{ log.memo }}</span>
-                        {% endif %}
+                <div class="log-item" style="display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 14px 16px;">
+                    <!-- 이력 타이틀 행 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(226, 221, 213, 0.4); padding-bottom: 4px;">
+                        <span class="log-date" style="font-size: 12px; font-weight: 700; color: var(--text-dark);">
+                            📅 {{ log.created_at|date:"Y-m-d H:i" }}
+                        </span>
+                        <span class="badge" style="font-size: 11px; font-weight: 700; padding: 3px 6px; border-radius: 6px;
+                            {% if log.event_type == 'created' %}background-color: var(--primary-light); color: var(--primary-color);
+                            {% elif log.event_type == 'watered' %}background-color: #E6F2FF; color: #3A83F1;
+                            {% else %}background-color: var(--accent-clay-light); color: var(--accent-clay);{% endif %}">
+                            {{ log.get_event_type_display }}{% if log.event_type == 'watered' %} 💧{% endif %}
+                        </span>
                     </div>
-                    <div class="log-weight">
-                        {{ log.weight_after }}g
-                    </div>
+                    <!-- 이력 내용 본문 (pre-line 줄바꿈 보존) -->
+                    <div class="log-memo" style="font-size: 12px; color: var(--text-dark); line-height: 1.5; white-space: pre-line; margin-top: 2px;">{{ log.detail }}</div>
                 </div>
             {% empty %}
                 <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px; background-color: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color);">
-                    아직 기록된 물주기 이력이 없습니다.
+                    아직 기록된 화분 이력이 없습니다.
                 </div>
             {% endfor %}
         </div>
@@ -366,8 +351,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="id_memo">메모 (선택)</label>
-                    <input type="text" name="memo" class="form-input" id="id_memo" placeholder="예: 영양제 추가함, 흠뻑 줌">
+                    <label for="id_detail">메모 (선택)</label>
+                    <input type="text" name="detail" class="form-input" id="id_detail" placeholder="예: 영양제 추가함, 흠뻑 줌">
                 </div>
                 
                 <div style="display: flex; gap: 10px; margin-top: 20px;">

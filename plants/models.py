@@ -7,16 +7,8 @@ import datetime
 class Plant(models.Model):
     """
     화분 정보를 저장하는 모델입니다.
-    각 화분의 현재 무게, 하루 물 감소량, 물을 주어야 하는 한계 무게, 계절 등을 관리합니다.
+    각 화분의 현재 무게, 하루 물 감소량, 물을 주어야 하는 한계 무게, 관리 팁 등을 관리합니다.
     """
-    
-    # 계절 선택 옵션 정의
-    SEASON_CHOICES = [
-        ('spring', '봄'),
-        ('summer', '여름'),
-        ('fall', '가을'),
-        ('winter', '겨울'),
-    ]
     
     name = models.CharField(
         max_length=50, 
@@ -31,10 +23,10 @@ class Plant(models.Model):
     water_threshold = models.FloatField(
         verbose_name="물주는 무게(g)"
     )
-    season = models.CharField(
-        max_length=10, 
-        choices=SEASON_CHOICES, 
-        verbose_name="현재 계절"
+    # 2단계 보완: 계절(season) 삭제 및 관리 Tip 필드 추가
+    tip = models.TextField(
+        blank=True, 
+        verbose_name="관리 Tip 메모"
     )
     # auto_now나 auto_now_add를 사용하지 않고 직접 입력 및 갱신합니다. 기본값은 현재 시각입니다.
     last_measured_at = models.DateTimeField(
@@ -117,40 +109,110 @@ class Plant(models.Model):
         """
         return self.days_until_watering <= 0
 
+    def save(self, *args, **kwargs):
+        """
+        save() 메서드를 오버라이드하여 화분 생성(created) 및 수정(updated)에 대한
+        이력 로그(PlantLog)를 자동으로 남깁니다.
+        """
+        is_new = self.pk is None
+        
+        if is_new:
+            # 신규 등록인 경우: 먼저 부모 save()를 호출하여 기본 키(pk)를 발급받습니다.
+            super().save(*args, **kwargs)
+            
+            # 화분 등록 이력 생성
+            detail_msg = f"초기값: {self.current_weight}g / 1일 {self.daily_decrease}g 감소 / 물주기 {self.water_threshold}g"
+            if self.tip:
+                detail_msg += f"\nTip: {self.tip}"
+                
+            self.logs.create(
+                event_type='created',
+                created_at=self.last_measured_at,
+                weight_after=self.current_weight,
+                detail=detail_msg
+            )
+        else:
+            # 정보 수정인 경우: DB에 저장된 수정 전 데이터를 조회하여 변경점을 대조합니다.
+            original = Plant.objects.get(pk=self.pk)
+            changes = []
+            
+            # 필드별 변경 대조
+            if original.name != self.name:
+                changes.append(f"이름: {original.name} → {self.name}")
+                
+            # 무게 변경 검증 (물주기 뷰에서 갱신하는 경우 제외)
+            if original.current_weight != self.current_weight:
+                if not getattr(self, '_is_watering', False):
+                    changes.append(f"무게: {original.current_weight}g → {self.current_weight}g")
+                    
+            if original.daily_decrease != self.daily_decrease:
+                changes.append(f"1일 감소량: {original.daily_decrease}g → {self.daily_decrease}g")
+                
+            if original.water_threshold != self.water_threshold:
+                changes.append(f"물주는 무게: {original.water_threshold}g → {self.water_threshold}g")
+                
+            if original.tip != self.tip:
+                old_tip = f'"{original.tip}"' if original.tip else '(없음)'
+                new_tip = f'"{self.tip}"' if self.tip else '(없음)'
+                changes.append(f"Tip 변경: {old_tip} → {new_tip}")
+                
+            # 부모 save() 호출하여 실제 데이터베이스 저장 완료
+            super().save(*args, **kwargs)
+            
+            # 변경 이력이 존재하는 경우에만 설정 변경 로그를 자동으로 생성
+            if changes:
+                detail_msg = "\n".join(changes)
+                self.logs.create(
+                    event_type='updated',
+                    detail=detail_msg
+                )
+
     def __str__(self):
         return self.name
 
 
-class WaterLog(models.Model):
+class PlantLog(models.Model):
     """
-    화분의 물주기 이력을 저장하는 모델입니다.
-    어떤 화분에 언제 물을 주었는지, 물을 준 직후 무게와 메모를 기록합니다.
+    화분의 이력을 저장하는 통합 로그 모델입니다.
+    화분 등록, 물주기, 설정 변경 등의 이벤트를 구분하여 기록합니다.
     """
+    EVENT_CHOICES = [
+        ('created', '화분 등록'),
+        ('watered', '물 줬어요'),
+        ('updated', '설정 변경'),
+    ]
+    
     plant = models.ForeignKey(
         Plant, 
         on_delete=models.CASCADE, 
-        related_name='water_logs',
+        related_name='logs',
         verbose_name="화분"
     )
-    watered_at = models.DateTimeField(
+    event_type = models.CharField(
+        max_length=10,
+        choices=EVENT_CHOICES,
+        verbose_name="이벤트 종류"
+    )
+    created_at = models.DateTimeField(
         default=timezone.now, 
-        verbose_name="물 준 시각"
+        verbose_name="기록 시각"
     )
     weight_after = models.FloatField(
-        verbose_name="물 준 후 무게(g)"
+        null=True,
+        blank=True,
+        verbose_name="기록 시점 무게(g)"
     )
-    memo = models.TextField(
+    detail = models.TextField(
         blank=True, 
-        verbose_name="메모"
+        verbose_name="상세 내용"
     )
 
     class Meta:
-        verbose_name = "물주기 이력"
-        verbose_name_plural = "물주기 이력 목록"
-        ordering = ['-watered_at']
+        verbose_name = "화분 이력 로그"
+        verbose_name_plural = "화분 이력 로그 목록"
+        ordering = ['-created_at']
 
     def __str__(self):
-        # 로컬 시간대로 물 준 시각 변환하여 출력 형식 구성
-        local_watered_at = timezone.localtime(self.watered_at)
-        formatted_time = local_watered_at.strftime('%Y-%m-%d %H:%M')
-        return f"{self.plant.name} - {formatted_time}"
+        local_created_at = timezone.localtime(self.created_at)
+        formatted_time = local_created_at.strftime('%Y-%m-%d %H:%M')
+        return f"{self.plant.name} - {self.get_event_type_display()} ({formatted_time})"
