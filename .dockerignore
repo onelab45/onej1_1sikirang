@@ -1,0 +1,25 @@
+# Git 및 환경 설정 파일 제외
+.git
+.gitignore
+.env
+.env.example
+README.md
+DEPLOY.md
+
+# 파이썬 가상환경 및 캐시 제외
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 로컬 SQLite 데이터베이스 및 정적 파일 디렉터리 제외
+# (정적 파일은 Dockerfile 빌드 단계에서 새로 수집하며, DB는 마운트하여 관리함)
+db.sqlite3
+staticfiles/
+
+# 에디터 관련 임시 설정 디렉터리 제외
+.vscode/
+.idea/
+.gemini/
