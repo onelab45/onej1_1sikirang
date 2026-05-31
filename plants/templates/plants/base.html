@@ -1,8 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="shortcut icon" href="{% static 'favicon.png' %}" type="image/png">
+    <link rel="icon" href="{% static 'favicon.png' %}" type="image/png">
+    <link rel="apple-touch-icon" href="{% static 'favicon.png' %}">
     <title>{% block title %}식이랑 - 화분 물주기 비서{% endblock %}</title>
     <!-- Google Fonts: 프리미엄 고딕 폰트 적용 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

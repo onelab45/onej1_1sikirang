@@ -91,6 +91,13 @@ class Plant(models.Model):
         auto_now=True, 
         verbose_name="수정 일시"
     )
+    calendar_event_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="구글 캘린더 이벤트 ID"
+    )
+
 
     class Meta:
         verbose_name = "화분"

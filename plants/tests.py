@@ -252,3 +252,29 @@ class PlantViewTests(TestCase):
     def test_calendar_view(self):
         response = self.client.get(reverse('plants:calendar'))
         self.assertEqual(response.status_code, 200)
+
+    def test_plant_edit_view_post(self):
+        """
+        화분 정보 수정(POST)이 뷰를 통해 정상 처리되고 리다이렉트되는지 검증합니다.
+        """
+        post_data = {
+            'name': '스투키_수정',
+            'current_weight': 810.0,
+            'daily_decrease': 9.0,
+            'water_threshold': 710.0,
+            'tip': '햇빛 자주 쬐어주기'
+        }
+        response = self.client.post(
+            reverse('plants:plant_edit', args=[self.plant.pk]),
+            data=post_data
+        )
+        self.assertRedirects(response, reverse('plants:plant_detail', args=[self.plant.pk]))
+        
+        # 수정사항이 반영되었는지 DB 조회
+        updated_plant = Plant.objects.get(pk=self.plant.pk)
+        self.assertEqual(updated_plant.name, '스투키_수정')
+        self.assertEqual(updated_plant.current_weight, 810.0)
+        self.assertEqual(updated_plant.daily_decrease, 9.0)
+        self.assertEqual(updated_plant.water_threshold, 710.0)
+        self.assertEqual(updated_plant.tip, '햇빛 자주 쬐어주기')
+

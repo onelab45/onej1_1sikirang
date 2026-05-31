@@ -3,7 +3,7 @@
 {% block title %}식이랑 - {{ plant.name }} 상세{% endblock %}
 
 {% block header %}
-    <a href="{% url 'plants:home' %}" class="back-link">➔</a>
+    <a href="{% url 'plants:home' %}" class="back-link">←</a>
     <h1 style="font-size: 18px; margin-right: auto; margin-left: 12px;">{{ plant.name }} 상세 정보</h1>
 {% endblock %}
 
@@ -303,7 +303,7 @@
             <span id="accordionArrow" style="transition: transform 0.2s;">▼</span>
         </div>
         <div class="accordion-content" id="accordionContent">
-            <form method="post" novalidate>
+            <form method="post" action="{% url 'plants:plant_edit' plant.pk %}" novalidate>
                 {% csrf_token %}
                 {% for field in form %}
                     <div class="form-group">

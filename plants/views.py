@@ -140,6 +140,7 @@ def plant_create(request):
             plant.user = user_profile
             plant.last_measured_at = timezone.now()
             plant.save()
+            _create_calendar_event(plant)
             return redirect('plants:home')
     else:
         form = PlantForm()
@@ -185,7 +186,9 @@ def plant_edit(request, pk):
     
     form = PlantForm(request.POST, instance=plant)
     if form.is_valid():
+        _delete_calendar_event(plant)
         form.save()
+        _create_calendar_event(plant)
     return redirect('plants:plant_detail', pk=plant.pk)
 
 
@@ -211,11 +214,15 @@ def plant_water(request, pk):
         water_log.created_at = timezone.now()
         water_log.save()
         
+        _delete_calendar_event(plant)
+        
         # Plant 모델의 현재 무게 및 마지막 측정 시각 동시 업데이트
         plant._is_watering = True
         plant.current_weight = water_log.weight_after
         plant.last_measured_at = water_log.created_at
         plant.save()
+        
+        _create_calendar_event(plant)
         
     return redirect('plants:plant_detail', pk=plant.pk)
 
@@ -228,6 +235,7 @@ def plant_delete(request, pk):
     """
     current_user_id = request.session['user_id']
     plant = get_object_or_404(Plant, pk=pk, user_id=current_user_id)
+    _delete_calendar_event(plant)
     plant.delete()
     return redirect('plants:home')
 
@@ -280,3 +288,39 @@ def calendar_view(request):
         'today_day': today.day if today.year == year and today.month == month else 0,
     }
     return render(request, 'plants/calendar.html', context)
+
+
+# ── 구글 캘린더 유틸 함수 (내부용) ────────────────────
+def _create_calendar_event(plant):
+    """
+    구글 캘린더에 물주기 일정 생성
+    """
+    try:
+        from .calendar_utils import create_watering_event
+        cal_id = 'primary'
+        watering_date = plant.watering_date
+        if watering_date:
+            event_id = create_watering_event(plant.name, watering_date, cal_id)
+            if event_id:
+                plant.calendar_event_id = event_id
+                plant.save(update_fields=['calendar_event_id'])
+    except Exception as e:
+        print(f"구글 캘린더 일정 생성 오류: {e}")
+        pass
+
+
+def _delete_calendar_event(plant):
+    """
+    구글 캘린더에서 기존 물주기 일정 삭제
+    """
+    try:
+        from .calendar_utils import delete_event
+        if plant.calendar_event_id:
+            cal_id = 'primary'
+            delete_event(plant.calendar_event_id, cal_id)
+            plant.calendar_event_id = None
+            plant.save(update_fields=['calendar_event_id'])
+    except Exception as e:
+        print(f"구글 캘린더 일정 삭제 오류: {e}")
+        pass
+
